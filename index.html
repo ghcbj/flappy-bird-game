@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flappy Bird</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    #gameContainer {
+      position: relative;
+      width: 360px;
+      height: 640px;
+      background: #000;
+      overflow: hidden;
+      box-shadow: 0 0 20px #222;
+      margin-top: 10px;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      background-color: black;
+    }
+
+    #startButton, #restartButton, #reviveButton {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      background: green;
+      color: white;
+      padding: 10px 20px;
+      font-size: 18px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    #startButton {
+      top: 50%;
+    }
+
+    #gameOver {
+      position: absolute;
+      top: 30%;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      padding: 20px;
+      display: none;
+      text-align: center;
+      width: 80%;
+      border-radius: 10px;
+    }
+
+    #adBanner {
+      margin-top: 10px;
+      width: 320px;
+      height: 50px;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="gameContainer">
+    <button id="startButton">Start Game</button>
+    <canvas id="gameCanvas" width="360" height="640"></canvas>
+
+    <div id="gameOver">
+      <h2>Game Over!</h2>
+      <p>Score: <span id="finalScore">0</span></p>
+      <button id="reviveButton">Watch Ad to Revive</button><br><br>
+      <button id="restartButton">Play Again</button>
+    </div>
+  </div>
+
+  <!-- Ads Banner Below Game Screen -->
+  <div id="adBanner">
+    <script type="text/javascript">
+      atOptions = {
+        'key' : '731a7d311bdac11de9ffe0084db3b52b',
+        'format' : 'iframe',
+        'height' : 50,
+        'width' : 320,
+        'params' : {}
+      };
+    </script>
+    <script type="text/javascript" src="//religionhaltnon.com/731a7d311bdac11de9ffe0084db3b52b/invoke.js"></script>
+  </div>
+
+  <!-- Reward Ad to Revive -->
+  <script type='text/javascript' src='//religionhaltnon.com/7c/67/5b/7c675bad61ea992e4bd126f0970ceed3.js'></script>
+
+  <!-- Game Script -->
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const startButton = document.getElementById('startButton');
+    const restartButton = document.getElementById('restartButton');
+    const reviveButton = document.getElementById('reviveButton');
+    const gameOverDiv = document.getElementById('gameOver');
+    const finalScore = document.getElementById('finalScore');
+
+    let bird = { x: 50, y: 150, width: 40, height: 30, velocity: 0 };
+    let pipes = [];
+    let gravity = 0.5;
+    let jump = -8;
+    let score = 0;
+    let gameLoop;
+    let isGameRunning = false;
+    let reviveUsed = false;
+
+    const birdImg = new Image();
+    birdImg.src = 'https://iili.io/3cUJNZ7.png';
+    const pipeImg = new Image();
+    pipeImg.src = 'https://iili.io/3ldbpnV.png';
+    const bgImg = new Image();
+    bgImg.src = 'https://iili.io/3cUJen9.png';
+
+    document.addEventListener('keydown', e => {
+      if (e.code === 'Space' || e.key === 'ArrowUp') bird.velocity = jump;
+    });
+
+    canvas.addEventListener('touchstart', () => bird.velocity = jump);
+
+    function startGame() {
+      bird.y = 150;
+      bird.velocity = 0;
+      pipes = [];
+      score = 0;
+      reviveUsed = false;
+      isGameRunning = true;
+      gameOverDiv.style.display = 'none';
+      startButton.style.display = 'none';
+      gameLoop = requestAnimationFrame(loop);
+    }
+
+    function restartGame() {
+      startGame();
+    }
+
+    function loop() {
+      update();
+      draw();
+      if (isGameRunning) gameLoop = requestAnimationFrame(loop);
+    }
+
+    function update() {
+      bird.velocity += gravity;
+      bird.y += bird.velocity;
+
+      if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - 200) {
+        const gap = 150;
+        const top = Math.random() * (canvas.height - gap - 100) + 50;
+        pipes.push({ x: canvas.width, top, bottom: top + gap, width: 60, passed: false });
+      }
+
+      pipes.forEach(pipe => {
+        pipe.x -= 2;
+        if (!pipe.passed && pipe.x + pipe.width < bird.x) {
+          score++;
+          pipe.passed = true;
+        }
+
+        if (collides(pipe)) {
+          endGame();
+        }
+      });
+
+      pipes = pipes.filter(pipe => pipe.x + pipe.width > 0);
+
+      if (bird.y + bird.height > canvas.height || bird.y < 0) {
+        endGame();
+      }
+    }
+
+    function collides(pipe) {
+      return (
+        bird.x < pipe.x + pipe.width &&
+        bird.x + bird.width > pipe.x &&
+        (bird.y < pipe.top || bird.y + bird.height > pipe.bottom)
+      );
+    }
+
+    function draw() {
+      ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+      ctx.drawImage(birdImg, bird.x, bird.y, bird.width, bird.height);
+
+      pipes.forEach(pipe => {
+        ctx.drawImage(pipeImg, pipe.x, 0, pipe.width, pipe.top);
+        ctx.drawImage(pipeImg, pipe.x, pipe.bottom, pipe.width, canvas.height - pipe.bottom);
+      });
+
+      ctx.fillStyle = 'white';
+      ctx.font = '24px Arial';
+      ctx.fillText('Score: ' + score, 20, 40);
+    }
+
+    function endGame() {
+      isGameRunning = false;
+      cancelAnimationFrame(gameLoop);
+      finalScore.textContent = score;
+      gameOverDiv.style.display = 'block';
+      reviveButton.style.display = reviveUsed ? 'none' : 'inline-block';
+    }
+
+    reviveButton.addEventListener('click', () => {
+      reviveUsed = true;
+      gameOverDiv.style.display = 'none';
+      bird.y = 150;
+      bird.velocity = 0;
+      isGameRunning = true;
+      gameLoop = requestAnimationFrame(loop);
+    });
+
+    startButton.addEventListener('click', startGame);
+    restartButton.addEventListener('click', restartGame);
+  </script>
+</body>
+</html>
